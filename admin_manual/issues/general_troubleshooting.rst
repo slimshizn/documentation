@@ -51,14 +51,37 @@ different issues. Always disable 3rd party apps before upgrades, and for
 troubleshooting. Please refer to the :ref:`apps_commands_label` on how
 to disable an app from command line.
 
-Nextcloud logfiles
-^^^^^^^^^^^^^^^^^^
+Internal Server Errors
+^^^^^^^^^^^^^^^^^^^^^^
 
-In a standard Nextcloud installation the log level is set to ``Normal``. To find
-any issues you need to raise the log level to ``All`` in your ``config.php``
-file, or to **Everything** on your Nextcloud Admin page. Please see
-:doc:`../configuration_server/logging_configuration` for more information on
-these log levels.
+An Internal Server Error, sometimes called a "500 error", indicates that the web server 
+encountered an unexpected condition that prevented it from fulfilling the request.
+
+This error response is a generic "catch-all" response. To find out the source of the
+error you will need to check your Nextcloud log (located in `data/nextcloud.log` by 
+default) and possibly your web server's error log (depending on where the failure is
+occurring). 
+
+.. tip:: Whenever possible, Nextcloud will include the "Request id" in the error. This
+    request ID can be searched for in your Nextcloud log file to find entries associated
+    with the failing transaction.
+
+Nextcloud log files
+^^^^^^^^^^^^^^^^^^^
+
+The Nextcloud log file is located in the data directory by default - e.g.
+``data/nextcloud.log``. If the Web UI is still reachable, it is also available
+via *Administration settings->Logging*.
+
+.. tip:: When asking for help, the entire raw log entry is generally required.
+
+.. note:  In a standard Nextcloud installation the log level is set to ``2``. This is 
+    known as the ``WARN`` level. It is sufficient for catching for day-to-day problems 
+    (warnings, errors, and fatal errors).
+
+For some situations you may need to adjust the log level in your ``config.php``
+file. Please see :doc:`../configuration_server/logging_configuration` for more 
+information on these log levels.
 
 Some logging - for example JavaScript console logging - needs debugging
 enabled. Edit :file:`config/config.php` and change ``'debug' => false,`` to
@@ -68,15 +91,29 @@ For JavaScript issues you will also need to view the javascript console. All
 major browsers have developer tools for viewing the console, and you
 usually access them by pressing F12.
 
-.. note:: The logfile of Nextcloud is located in the data directory
-   ``nextcloud/data/nextcloud.log``.
-
 .. _label-phpinfo:
 
 PHP version and information
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You will need to know your PHP version and configurations. To do this, create a
+You will need to know the PHP version and configuration that is in-use on your 
+Nextcloud server. This will not necessarily be the same version and configuration as 
+can be reached from the command-line. The simplest way to gather this information is 
+by using what's commonly referenced as ``phpinfo()``.
+
+The most accurate - and easiest - way to access ``phpinfo`` is by checking it from 
+within Nextcloud itself. Of course, this requires that Nextcloud is functioning 
+enough that you can log in as an administrator and access the 
+**Administration settings -> System** menu. If so, you can enable the exposure of 
+``phpinfo`` data by toggling it on via ``occ``:
+
+``./occ config:app:set --value=yes serverinfo phpinfo``
+
+From then on a new button labeled **Show phpinfo** will be visible in the web 
+interface under **Administration settings -> System**. Clicking it will expose 
+just about everything you may want to know about your PHP environment.
+
+If accessing the Nextcloud web interface is not an option, you may create a
 plain-text file named **phpinfo.php** and place it in your Web root, for
 example ``/var/www/html/phpinfo.php``. (Your Web root may be in a different
 location; your Linux distribution documentation will tell you where.) This file
@@ -154,7 +191,7 @@ Web server and Nextcloud itself.
    Linux distros or operating systems they can differ.
 
 * The logfile of Apache2 is located in ``/var/log/apache2/error.log``.
-* The logfile of PHP can be configured in your ``/etc/php/8.0/apache2/php.ini``.
+* The logfile of PHP can be configured in your ``/etc/php/8.3/apache2/php.ini``.
   You need to set the directive ``log_errors`` to ``On`` and choose the path
   to store the logfile in the ``error_log`` directive. After those changes you
   need to restart your Web server.
@@ -178,7 +215,7 @@ these modules:
 * mod_security
 * mod_reqtimeout
 * mod_deflate
-* libapache2-mod-php*filter (use libapache2-mod-php8.0 instead)
+* libapache2-mod-php*filter (use libapache2-mod-php8.3 instead)
 * mod_spdy together with libapache2-mod-php5 / mod_php (use fcgi or php-fpm
   instead)
 * mod_dav
@@ -193,6 +230,7 @@ these modules:
 
 3. PHP
 
+* Tideways
 * eAccelerator
 
 .. _trouble-webdav-label:
@@ -249,7 +287,8 @@ subfolder like ``nextcloud``, then ``https://example.com/nextcloud/remote.php/da
 For the first case the :file:`.htaccess` file shipped with Nextcloud should do
 this work for you when you're running Apache. You need to make sure that your
 Web server is using this file. Additionally, you need the mod_rewrite Apache
-module installed to process these redirects. When running Nginx please refer to
+module installed and ``AllowOverride All`` set in your :file:`apache2.conf`
+or vHost-file to process these redirects. When running Nginx please refer to
 :doc:`../installation/nginx`.
 
 
@@ -259,13 +298,22 @@ document root of your Web server and add the following lines::
 
     <IfModule mod_rewrite.c>
       RewriteEngine on
-      RewriteRule ^/\.well-known/carddav /nextcloud/remote.php/dav [R=301,L]
-      RewriteRule ^/\.well-known/caldav /nextcloud/remote.php/dav [R=301,L]
-      RewriteRule ^/\.well-known/webfinger /nextcloud/index.php/.well-known/webfinger [R=301,L]
-      RewriteRule ^/\.well-known/nodeinfo /nextcloud/index.php/.well-known/nodeinfo [R=301,L]
+      RewriteRule ^\.well-known/carddav /nextcloud/remote.php/dav [R=301,L]
+      RewriteRule ^\.well-known/caldav /nextcloud/remote.php/dav [R=301,L]
+      RewriteRule ^\.well-known/webfinger /nextcloud/index.php/.well-known/webfinger [R=301,L]
+      RewriteRule ^\.well-known/nodeinfo /nextcloud/index.php/.well-known/nodeinfo [R=301,L]
     </IfModule>
 
 Make sure to change /nextcloud to the actual subfolder your Nextcloud instance is running in.
+
+.. note:: If you put the above directives directly into an Apache
+   configuration file (usually within ``/etc/apache2/``)
+   instead of ``.htaccess``, you need to prepend the first argument of
+   each ``RewriteRule`` option with a forward slash ``/``, for example
+   ``^/\.well-known/carddav``.
+   This is because Apache normalizes paths for the use in ``.htaccess``
+   files by dropping any number of leading slashes, but it does not
+   do so for the use in its main configuration files.
 
 If you are running NGINX, make sure ``location = /.well-known/carddav {`` and ``location = /.well-known/caldav {`` are properly configured as described in :doc:`../installation/nginx`, adapt to use a subfolder if necessary.
 
@@ -359,7 +407,7 @@ Unofficially moving the data directory can be done as follows:
 6. Ensure permissions are still correct
 7. Restart apache
 
-.. warning
+.. warning::
    However this is not supported and you risk breaking your database.
 
 For a safe moving of data directory, supported by Nextcloud, recommended actions are:
@@ -371,7 +419,7 @@ For a safe moving of data directory, supported by Nextcloud, recommended actions
 5. Ensure permissions are still correct
 6. Restart apache
 
-.. warning
+.. warning::
    Note, you may need to configure your webserver to support symlinks.
 
 Troubleshooting quota or size issues
@@ -384,6 +432,8 @@ does not match the actual data stored in the user's ``data/$userId/files`` direc
 
    Metadata, versions, trashbin and encryption keys are not counted in the used space above.
    Please refer to the `quota documentation <https://docs.nextcloud.com/server/latest/user_manual/en/files/quota.html>`_ for details.
+
+.. TODO ON RELEASE: Update version number above on release
 
 Running the following command can help fix the sizes and quota for a given user::
 

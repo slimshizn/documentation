@@ -4,7 +4,7 @@
 Events
 ======
 
-Events are used to communicate between different aspects of the Nextcloud eco system. They are used in the Nextcloud server internally, for server-to-apps communcation as well as inter-app communication.
+Events are used to communicate between different aspects of the Nextcloud eco system. They are used in the Nextcloud server internally, for server-to-apps communication as well as inter-app communication.
 
 
 Overview
@@ -13,7 +13,6 @@ Overview
 The term "events" is a bit broad in Nextcloud and there are multiple ways of emitting them.
 
 * `OCP event dispatcher`_
-* `Symfony event dispatcher`_
 * `Hooks`_
 * `Public Emitter`_
 
@@ -30,7 +29,7 @@ The name should reflect the subject and the actions. Suffixing event classes wit
 
 For example, if a user is created, a `UserCreatedEvent` will be emitted.
 
-Events are usually evmitted *after* the event has happened. If it's emitted before, it should be prefixed with `Before`.
+Events are usually emitted *after* the event has happened. If it's emitted before, it should be prefixed with `Before`.
 
 Thus `BeforeUserCreatedEvent` is emitted *before* the user data is written to the database.
 
@@ -100,7 +99,7 @@ You can use simple callback to react on events. They will receive the event obje
     class Application extends App {
         public function __construct() {
             parent::__construct('myapp');
-                /* @var IEventDispatcher $eventDispatcher */
+                /* @var IEventDispatcher $dispatcher */
                 $dispatcher = $this->getContainer()->query(IEventDispatcher::class);
                 $dispatcher->addListener(AddEvent::class, function(AddEvent $event) {
                     // ...
@@ -301,6 +300,13 @@ This event is triggered when a user deletes a card in an address-book.
 
 This event is triggered when a user updates a card in an address-book.
 
+``OCA\DAV\Events\SabrePluginAddEvent``
+**************************************
+
+.. versionadded:: 28
+
+This event is triggered during the setup of the SabreDAV server to allow the registration of additional plugins.
+
 ``\OCA\DAV\Events\SabrePluginAuthInitEvent``
 ********************************************
 
@@ -350,6 +356,13 @@ This event is triggered when the files app is rendered. It can be used to add ad
 
 Emitted before the rendering step of the public share page happens. The event holds a flag that specifies if it is the authentication page of a public share.
 
+``\OCA\Files_Trashbin\Events\MoveToTrashEvent``
+***********************************************
+
+.. versionadded:: 28
+
+Emitted after a file or folder is moved to the trashbin.
+
 ``\OCA\Settings\Events\BeforeTemplateRenderedEvent``
 ********************************************************
 
@@ -378,293 +391,7 @@ This event is triggered right after the LDAP user backend is registered.
 
 This event is triggered whenever the viewer is loaded and extensions should be loaded.
 
-``\OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent``
-*************************************************************
-
-.. versionadded:: 20
-
-Emitted before the rendering step of each TemplateResponse. The event holds a flag that specifies if an user is logged in.
-
-``\OCP\Authentication\Events\LoginFailedEvent``
-***********************************************
-
-.. versionadded:: 19
-
-Emitted when the authentication fails, but only if the login name can be associated with an existing user.
-
-``\OCP\Authentication\TwoFactorAuth\TwoFactorProviderDisabled``
-***************************************************************
-
-.. versionadded:: 20
-
-``\OCP\Contacts\Events\ContactInteractedWithEvent``
-***************************************************
-
-.. versionadded:: 19
-
-Event emitted by apps whenever there was an interaction with another user or contact.
-
-It is an event that allows apps to notify other components about an interaction between two users. This can be used to build better recommendations and suggestions in user interfaces.
-
-Emitters should add at least one identifier (uid, email, federated cloud ID) of the recipient of the interaction.
-
-``\OCP\DirectEditing\RegisterDirectEditorEvent``
-************************************************
-
-.. versionadded:: 18
-
-Event to allow to register the direct editor.
-
-``\OCP\Files\Events\BeforeFileScannedEvent``
-********************************************
-
-.. versionadded:: 18
-
-``\OCP\Files\Events\BeforeFolderScannedEvent``
-**********************************************
-
-.. versionadded:: 18
-
-``\OCP\Files\Events\FileCacheUpdated``
-**************************************
-
-.. versionadded:: 18
-
-``\OCP\Files\Events\FileScannedEvent``
-**************************************
-
-.. versionadded:: 18
-
-``\OCP\Files\Events\FolderScannedEvent``
-****************************************
-
-.. versionadded:: 18
-
-``\OCP\Files\Events\NodeAddedToCache``
-**************************************
-
-.. versionadded:: 18
-
-``\OCP\Files\Events\NodeRemovedFromCache``
-******************************************
-
-.. versionadded:: 18
-
-``\OCP\Group\Events\BeforeGroupCreatedEvent``
-*********************************************
-
-.. versionadded:: 18
-
-``\OCP\Group\Events\BeforeGroupDeletedEvent``
-*********************************************
-
-.. versionadded:: 18
-
-``\OCP\Group\Events\BeforeUserAddedEvent``
-******************************************
-
-.. versionadded:: 18
-
-``\OCP\Group\Events\BeforeUserRemovedEvent``
-********************************************
-
-.. versionadded:: 18
-
-Deprecated in 20.0.0 - it can't be guaranteed that this event is triggered in all case (e.g. for LDAP users this isn't possible)
-
-``\OCP\Group\Events\GroupCreatedEvent``
-***************************************
-
-.. versionadded:: 18
-
-``\OCP\Group\Events\GroupDeletedEvent``
-***************************************
-
-.. versionadded:: 18
-
-``\OCP\Group\Events\SubAdminAddedEvent``
-****************************************
-
-.. versionadded:: 21
-
-``\OCP\Group\Events\SubAdminRemovedEvent``
-******************************************
-
-.. versionadded:: 21
-
-``\OCP\Group\Events\UserAddedEvent``
-************************************
-
-.. versionadded:: 18
-
-``\OCP\Group\Events\UserRemovedEvent``
-**************************************
-
-.. versionadded:: 18
-
-``\OCP\Mail\Events\BeforeMessageSent``
-**************************************
-
-.. versionadded:: 19
-
-Emitted before a system mail is sent. It can be used to alter the message.
-
-``\OCP\Security\CSP\AddContentSecurityPolicyEvent``
-***************************************************
-
-.. versionadded:: 17
-
-Allows to inject something into the default content policy. This is for example useful when you're injecting Javascript code into a view belonging to another controller and cannot modify its Content-Security-Policy itself. Note that the adjustment is only applied to applications that use AppFramework controllers.
-
-WARNING: Using this API incorrectly may make the instance more insecure. Do think twice before adding whitelisting resources. Please do also note that it is not possible to use the `disallowXYZ` functions.
-
-``\OCP\Security\Events\GenerateSecurePasswordEvent``
-****************************************************
-
-.. versionadded:: 18
-
-``\OCP\Security\Events\ValidatePasswordPolicyEvent``
-****************************************************
-
-.. versionadded:: 18
-
-``\OCP\Security\FeaturePolicy\AddFeaturePolicyEvent``
-*****************************************************
-
-.. versionadded:: 17
-
-Event that allows to register a feature policy header to a request.
-
-``\OCP\Share\Events\ShareCreatedEvent``
-***************************************
-
-.. versionadded:: 18
-
-``\OCP\Share\Events\VerifyMountPointEvent``
-*******************************************
-
-.. versionadded:: 19
-
-``\OCP\User\Events\BeforeUserLoggedInWithCookieEvent``
-******************************************************
-
-.. versionadded:: 18
-
-Emitted before a user is logged in via remember-me cookies.
-
-``\OCP\User\Events\UserLoggedInWithCookieEvent``
-************************************************
-
-.. versionadded:: 18
-
-Emitted when a user has been successfully logged in via remember-me cookies.
-
-``\OCP\User\Events\BeforePasswordUpdatedEvent``
-***********************************************
-
-.. versionadded:: 18
-
-Emitted before the user password is updated.
-
-``\OCP\User\Events\PasswordUpdatedEvent``
-*****************************************
-
-.. versionadded:: 18
-
-Emitted when the user password has been updated.
-
-``\OCP\User\Events\BeforeUserCreatedEvent``
-*******************************************
-
-.. versionadded:: 18
-
-Emitted before a new user is created on the back-end.
-
-``\OCP\User\Events\UserCreatedEvent``
-*************************************
-
-.. versionadded:: 18
-
-Emitted when a new user has been created on the back-end.
-
-``\OCP\User\Events\BeforeUserDeletedEvent``
-*******************************************
-
-.. versionadded:: 18
-
-``\OCP\User\Events\UserDeletedEvent``
-*************************************
-
-.. versionadded:: 18
-
-``\OCP\User\Events\BeforeUserLoggedInEvent``
-********************************************
-
-.. versionadded:: 18
-
-``\OCP\User\Events\BeforeUserLoggedOutEvent``
-*********************************************
-
-.. versionadded:: 18
-
-Emitted before a user is logged out.
-
-``\OCP\User\Events\PostLoginEvent``
-***********************************
-
-.. versionadded:: 18
-
-``\OCP\User\Events\UserChangedEvent``
-*************************************
-
-.. versionadded:: 18
-
-``\OCP\User\Events\UserLiveStatusEvent``
-****************************************
-
-.. versionadded:: 20
-
-``\OCP\User\Events\UserLoggedInEvent``
-**************************************
-
-.. versionadded:: 18
-
-``\OCP\User\Events\UserLoggedOutEvent``
-***************************************
-
-.. versionadded:: 18
-
-Emitted when a user has been logged out successfully.
-
-``\OCP\WorkflowEngine\LoadSettingsScriptsEvent``
-************************************************
-
-.. versionadded:: 20
-
-Emitted when the workflow engine settings page is loaded.
-
-``\OCP\WorkflowEngine\RegisterChecksEvent``
-*******************************************
-
-.. versionadded:: 18
-
-``\OCP\WorkflowEngine\RegisterEntitiesEvent``
-*********************************************
-
-.. versionadded:: 18
-
-``\OCP\WorkflowEngine\RegisterOperationsEvent``
-***********************************************
-
-.. versionadded:: 18
-
-Symfony event dispatcher
-------------------------
-
-.. warning:: Using the Symfony event dispatcher mechanism is discouraged. Use the `OCP event dispatcher`_ abstraction instead.
-
-tbd
-
+.. include:: _available_events_ocp.rst
 
 Hooks
 -----
@@ -709,7 +436,7 @@ The hook logic should be in a separate class that is being registered in the `Ap
              */
             $container->registerService('UserHooks', function($c) {
                 return new UserHooks(
-                    $c->query('ServerContainer')->getUserManager()
+                    $c->get(\OCP\IUserManager::class)
                 );
             });
         }
@@ -771,7 +498,7 @@ The following hooks are available:
 Session
 ```````
 
-Injectable from the ServerContainer by calling the method **getUserSession()**.
+Injectable from the ServerContainer with the ``\OCP\IUserSession`` service.
 
 Hooks available in scope **\\OC\\User**:
 
@@ -789,7 +516,7 @@ Hooks available in scope **\\OC\\User**:
 UserManager
 ```````````
 
-Injectable from the ServerContainer by calling the method **getUserManager()**.
+Injectable from the ServerContainer with the ``\OCP\IUserManager`` service.
 
 Hooks available in scope **\\OC\\User**:
 

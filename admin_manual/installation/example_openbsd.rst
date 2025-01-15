@@ -91,7 +91,7 @@ Create a virtualhost in ``/etc/httpd.conf`` and add the following content to it:
 		  block return 301 "https://$SERVER_NAME/nextcloud/public.php?service=webfinger"
 	  }
 
-	  location match "/nextcloud/oc[ms]%-provider/*" {
+	  location match "/nextcloud/ocs-provider/*" {
 		  directory index index.php
 		  pass
 	  }
@@ -114,7 +114,6 @@ It is recommended to add opcache to it::
 
   [opcache]
   opcache.enable=1
-  opcache.enable_cli=1
   opcache.memory_consumption=512
   opcache.interned_strings_buffer=8
   opcache.max_accelerated_files=10000
@@ -208,7 +207,7 @@ Since in OpenBSD httpd(8) works with a chroot(8) by default, we need to be sure 
 Nextcloud final steps
 ---------------------
 
-Now that we have all in place, you should go to your browser with your URL (I am asuming you have an SSL already installed)::
+Now that we have all in place, you should go to your browser with your URL (I am assuming you have an SSL already installed)::
 
   https://domain.tld
   

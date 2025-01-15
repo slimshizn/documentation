@@ -11,6 +11,15 @@ The profiler application is available on `GitHub <https://github.com/nextcloud/p
 you need to clone the stableX branch if you are using Nextcloud X or master if you are
 using the latest development version of Nextcloud.
 
+.. code-block:: bash
+
+   cd apps/
+   git clone --branch stableX https://github.com/nextcloud/profiler.git
+   # adapt X to your Nextcloud version: php occ version | grep -oP 'Nextcloud \K\d+'
+   cd profiler
+   cd ../..
+
+
 Enable the app
 --------------
 
@@ -49,13 +58,13 @@ the toolbar track the XHR requests created by the JavaScript frontend.
 You can hover on top of the toolbar information to show more detailed information and also
 click on the toolbar to show all the information collected.
 
-There is for the moment 4 views:
+There is for the moment 5 views:
 
 1. The general request and response view
 2. The database queries view
 3. The event view
 4. The LDAP queries view
-4. The cache view
+5. The cache view
 
 
 The General Request and Response View

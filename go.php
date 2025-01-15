@@ -4,14 +4,18 @@
 ############## Adjust when editing docs ##################
 
 $mapping = array(
+    'admin'                   => '/admin_manual',
     'admin-2fa'               => '/admin_manual/configuration_user/two_factor-auth.html',
     'admin-antivirus-configuration'     => '/admin_manual/configuration_server/antivirus_configuration.html',
     'admin-background-jobs'   => '/admin_manual/configuration_server/background_jobs_configuration.html',
     'admin-backup'            => '/admin_manual/maintenance/backup.html',
     'admin-bigint-conversion' => '/admin_manual/configuration_database/bigint_identifiers.html',
+    'admin-big-file-upload'   => '/admin_manual/configuration_files/big_file_upload_configuration.html',
     'admin-code-integrity'    => '/admin_manual/issues/code_signing.html',
+    'admin-cache'             => '/admin_manual/configuration_server/caching_configuration.html',
     'admin-config'            => '/admin_manual/configuration_server/config_sample_php_parameters.html',
     'admin-db-conversion'     => '/admin_manual/configuration_database/db_conversion.html',
+    'admin-db-transaction'    => '/admin_manual/configuration_database/linux_database_configuration.html#database-read-committed-transaction-isolation-level',
     'admin-delegation'        => '/admin_manual/configuration_server/admin_delegation_configuration.html',
     'admin-email'             => '/admin_manual/configuration_server/email_configuration.html',
     'admin-encryption'        => '/admin_manual/configuration_files/encryption_configuration.html',
@@ -21,12 +25,14 @@ $mapping = array(
     'admin-files-retention'   => '/admin_manual/file_workflows/retention.html',
     'admin-install'           => '/admin_manual/installation/index.html',
     'admin-ldap'              => '/admin_manual/configuration_user/user_auth_ldap.html',
+    'admin-long-running-migration-steps' => '/admin_manual/maintenance/upgrade.html#long-running-migration-steps',
     'admin-mysql-utf8mb4'     => '/admin_manual/configuration_database/mysql_4byte_support.html',
     'admin-nginx'             => '/admin_manual/installation/nginx.html',
     'admin-oauth2'            => '/admin_manual/configuration_server/oauth2.html',
     'admin-performance'       => '/admin_manual/installation/server_tuning.html',
     'admin-php-fpm'           => '/admin_manual/installation/source_installation.html#php-fpm-tips-label',
     'admin-php-opcache'       => '/admin_manual/installation/server_tuning.html#enable-php-opcache',
+    'admin-php-modules'       => '/admin_manual/installation/php_configuration.html#php-modules',
     'admin-provisioning-api'  => '/admin_manual/configuration_user/user_provisioning_api.html',
     'admin-reverse-proxy'     => '/admin_manual/configuration_server/reverse_proxy_configuration.html',
     'admin-security'          => '/admin_manual/installation/harden_server.html',
@@ -45,10 +51,13 @@ $mapping = array(
     'admin-warnings'          => '/admin_manual/configuration_server/security_setup_warnings.html',
     'admin-workflowengine'    => '/admin_manual/file_workflows/index.html',
 
-    'developer-code-integrity'=> '/developer_manual/app/code_signing.html',
     'developer-manual'        => '/developer_manual',
-    'developer-theming'       => '/developer_manual/core/theming.html',
+    'developer-backports'     => '/developer_manual/getting_started/development_process.html#bugfixes',
+    'developer-code-integrity'=> '/developer_manual/app_publishing_maintenance/code_signing.html',
+    'developer-css'           => '/developer_manual/html_css_design/css.html',
+    'developer-theming'       => '/developer_manual/basics/front-end/theming.html',
 
+    'user'                    => '/user_manual',
     'user-2fa'                => '/user_manual/en/user_2fa.html',
     'user-encryption'         => '/user_manual/en/files/encrypting_files.html',
     'user-files'              => '/user_manual/en/files/index.html',
@@ -73,13 +82,48 @@ $location = "$proto://$name$port$path";
 
 header('HTTP/1.1 302 Moved Temporarily');
 if (array_key_exists($from, $mapping)) {
-    header('Location: ' . $location . $mapping[$from]);
+    $subPath = $mapping[$from];
+} elseif (str_starts_with($from, 'admin-')) {
+    $subPath = '/admin_manual';
+} elseif (str_starts_with($from, 'developer-')) {
+    $subPath = '/developer_manual';
 } else {
-    if (strpos($from, 'admin-') === 0) {
-        header('Location: ' . $location . '/admin_manual');
-    } else if (strpos($from, 'developer-') === 0) {
-        header('Location: ' . $location . '/developer_manual');
-    } else {
-        header('Location: ' . $location . '/user_manual');
+    $subPath = '/user_manual';
+}
+
+$subPathParts = explode('/', $subPath);
+$manual = $subPathParts[1] ?? '';
+if ($manual === 'user_manual') {
+    // Sort accepted languages by their weight
+    $acceptLanguages = array_reduce(
+        explode(', ', $_SERVER['HTTP_ACCEPT_LANGUAGE']),
+        static function ($out, $element) {
+            [$language, $q] = array_merge(explode(';q=', $element), [1]);
+
+            $out[$language] = (float)$q;
+
+            return $out;
+        },
+        [],
+    );
+    arsort($acceptLanguages);
+
+    foreach ($acceptLanguages as $language => $weight) {
+        if (!preg_match('/^[a-z-]+$/im', $language)) {
+            // Skip any invalid languages and prevent directory traversals
+            continue;
+        }
+
+        $language = str_replace('-', '_', $language);
+
+        // To test locally add '/_build/html/' to the path.
+        if (file_exists(__DIR__ . '/user_manual/' . $language)) {
+            // Insert the language /user_manual/<language>/...
+            array_splice($subPathParts, 2, 0, [$language]);
+            $subPath = implode('/', $subPathParts);
+            break;
+        }
     }
 }
+
+header('Location: ' . $location . $subPath);

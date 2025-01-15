@@ -2,6 +2,24 @@
 Calendar / CalDAV
 =================
 
+Calendar server settings
+------------------------
+
+The calendar server can be configured on the Groupware admin settings page.
+You can globally disable sending invitation emails for events, generating the built-in birthday
+calendar, and sending email notifications about upcoming events.
+
+.. figure:: images/settings_calendar-server.png
+  :scale: 60%
+
+.. versionadded:: 30 The section will be hidden if no app makes use of the CalDAV backend.
+
+Starting from Nextcloud 30, the calendar server settings section will be hidden if no app uses the
+CalDAV backend.
+Install and enable an appropriate app to show the section again, e.g.
+`Calendar <https://apps.nextcloud.com/apps/calendar>`_ or
+`Tasks <https://apps.nextcloud.com/apps/tasks>`_.
+
 Events
 ------
 
@@ -28,13 +46,13 @@ Contacts that have a birthday date filled are automatically added as events to a
 If you deactivate this option, all users will no longer have this calendar.
 
 When activating this option, users birthday calendars won't be available right away because they need to be generated
-by a background task. See :doc:`../configuration_server/occ_command` section DAV commands.
+by a background task. See :doc:`../occ_command` section DAV commands.
 
 Reminder notifications
 ----------------------
 Nextcloud handles sending notifications for events.
 
-Nextcloud currently handles two types of reminder notifications: Build-in Nextcloud notifications and
+Nextcloud currently handles two types of reminder notifications: Built-in Nextcloud notifications and
 email notifications. For the emails to be send, you'll need a configured email server.
 See :doc:`../configuration_server/email_configuration`.
 
@@ -49,7 +67,7 @@ more often than the standard ``cron`` system::
  # crontab -u www-data -e
  */5 * * * * php -f /var/www/nextcloud/occ dav:send-event-reminders
 
-See :doc:`../configuration_server/occ_command` section Dav commands.
+See :doc:`../occ_command` section Dav commands.
 
 You'll also need to change the sending mode from ``background-job`` to ``occ``::
 
@@ -79,17 +97,34 @@ If you don't wish for users to have this capability, you can disable FreeBusy fo
 Subscriptions
 -------------
 
+Custom public calendars
+~~~~~~~~~~~~~~~~~~~~~~~
+
+In addition to the public holiday calendars, it is possible to define your own calendar.
+They act in the same way as the holiday calendars and can be configured with the following command::
+
+ php occ config:app:set calendar publicCalendars --value '[{"name":"My custom calendar","source":"http://example.com/example.ics"}]'
+
+The setting is specified as a JSON array of objects with the following options:
+
+* ``name`` - name of the calendar in the listing
+* ``source`` - URL of the calendar's ICS file
+* ``displayName`` - optional, to overwrite the name of the subscribed calendar
+* ``description`` - optional, description in the listing
+* ``authors`` - optional, copyrights and so on
+
 Refresh rate
 ~~~~~~~~~~~~
 
 Calendar subscriptions are cached on server and refreshed periodically.
-The default refresh rate is one week, unless the subscription itself tells otherwise.
+If the calendar server provides a `refresh interval <https://icalendar.org/New-Properties-for-iCalendar-RFC-7986/5-7-refresh-interval-property.html>`_, it is respected.
+Otherwise the default refresh rate is one day.
 
-To set up a different default refresh rate, change the ``calendarSubscriptionRefreshRate`` option::
+To set up a different default refresh rate for calendars without server side refresh rates, change the ``calendarSubscriptionRefreshRate`` option::
 
- php occ config:app:set dav calendarSubscriptionRefreshRate --value "P1D"
+ php occ config:app:set dav calendarSubscriptionRefreshRate --value "PT6H"
 
-Where the value is a `DateInterval <https://www.php.net/manual/dateinterval.construct.php>`_, for instance with the above command all of the Nextcloud instance's calendars would be refreshed every day.
+Where the value is a `DateInterval <https://www.php.net/manual/dateinterval.construct.php>`_, for instance with the above command all of the Nextcloud instance's calendars would be refreshed every 6 hours.
 
 Allow subscriptions on local network
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -115,13 +150,32 @@ Where the value is the number of seconds for the period. Setting the value to ``
 Resources and rooms
 -------------------
 
-The Nextcloud CalDAV back end support resources and rooms. Resources and room can be booked for appointments and the system will schedule them so they can only be used once at a time. Those resources and rooms have to be provided by an app that provides a back end for this.
+The Nextcloud CalDAV backend supports resources and rooms. Resources and rooms can be booked for appointments, and the system will schedule them so they can only be used once at a time. Those resources and rooms have to be provided by an app that provides a backend for this.
 
-Once a back end app is installed the app typically allows admins or even users to define the resources, but this is subject of the specific implementation.
+Once a backend app is installed, the app typically allows admins, or even users, to define the resources, but this is subject of the specific implementation.
 
-Nextcloud periodically queries all registered back ends. Therefore new and updated resources and rooms will show with a delay.
+Nextcloud periodically queries all registered backends, therefore new/updated resources and rooms will show with a delay.
 
-Known back ends
-~~~~~~~~~~~~~~~
+Known backends
+~~~~~~~~~~~~~~
 
-* `Calendar Resource Management <https://github.com/nextcloud/calendar_resource_management>`_: database back end with CLI configuration for admins
+* `Calendar Resource Management <https://github.com/nextcloud/calendar_resource_management>`_: database backend with CLI configuration for admins
+
+Rate limits
+-----------
+
+Nextcloud rate limits the creation of calendars and subscriptions if too many items are created within a short time frame. The default is 10 calendars or subscriptions per hour. This can be customized as follows::
+
+  # Set limit to 15 items per 30 minutes
+  php occ config:app:set dav rateLimitCalendarCreation --type=integer --value=15
+  php occ config:app:set dav rateLimitPeriodCalendarCreation --type=integer --value=1800
+
+Additionally, the maximum number of calendars and subscriptions a user may create is limited to 30 items. This can be customized too::
+
+  # Allow users to create 50 calendars/subscriptions
+  php occ config:app:set dav maximumCalendarsSubscriptions --type=integer --value=50
+
+or::
+
+  # Allow users to create calendars/subscriptions without restriction
+  php occ config:app:set dav maximumCalendarsSubscriptions --type=integer --value=-1

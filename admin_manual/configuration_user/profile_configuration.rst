@@ -1,3 +1,5 @@
+.. _profile:
+
 =====================
 Profile configuration
 =====================
@@ -8,6 +10,8 @@ Personal info settings under the Personal settings section.
 
 As an administrator you may change the default for new users and may also
 disable profile globally to remove all profile functionality.
+
+Profile properties are also written into the :ref:`system address book<system-address-book>`.
 
 To enable or disable profile by default for new users switch the toggle in
 Basic settings under the Administration settings section.
@@ -23,7 +27,7 @@ Basic settings under the Administration settings section.
 
   occ config:app:set settings profile_enabled_by_default --value="0"
 
-Please refer to :doc:`../configuration_server/occ_command` for all available
+Please refer to :doc:`../occ_command` for all available
 ``occ`` commands.
 
 To disable profile globally add the following line to your ``config.php``
@@ -34,6 +38,8 @@ To disable profile globally add the following line to your ``config.php``
 
 Please refer to :doc:`../configuration_server/config_sample_php_parameters` for
 all available ``config.php`` options.
+
+.. _profile-property-scopes:
 
 Property scopes
 ---------------
